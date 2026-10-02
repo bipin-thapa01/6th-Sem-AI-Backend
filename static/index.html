@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ANPR Console</title>
+<style>
+:root{--bg:#0f1419;--panel:#171d25;--panel2:#1f2733;--line:#2b3544;--text:#e6ebf2;--muted:#8b98a9;--accent:#4f9dff;--ok:#38d39f;--warn:#ffb84d;--err:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0;display:flex;align-items:center;gap:10px}
+.cfg{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input,button,select{font:inherit;color:var(--text)}
+input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 10px;width:100%}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+button{background:var(--accent);border:0;color:#04101f;font-weight:600;padding:8px 16px;border-radius:6px;cursor:pointer}
+button:hover{filter:brightness(1.1)}button:disabled{opacity:.4;cursor:not-allowed}
+button.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+button.sm{padding:4px 10px;font-size:12px}
+.badge{padding:3px 10px;border-radius:99px;font-size:12px;background:var(--panel2);border:1px solid var(--line)}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.err{color:var(--err);border-color:var(--err)}
+main{max-width:1200px;margin:0 auto;padding:20px 24px 60px}
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+.tab{background:none;color:var(--muted);border-radius:6px 6px 0 0;padding:10px 18px;border-bottom:2px solid transparent}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.panel h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}.g5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:800px){.g2,.g4,.g5{grid-template-columns:1fr 1fr}}
+label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:26px;text-align:center;color:var(--muted);cursor:pointer;transition:.15s}
+.drop:hover,.drop.over{border-color:var(--accent);color:var(--text);background:var(--panel2)}
+.drop b{color:var(--text)}
+.stat{background:var(--panel2);border-radius:8px;padding:12px 14px}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-size:22px;font-weight:700;margin-top:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{background:var(--panel2);border:1px solid var(--line);padding:3px 10px;border-radius:99px;font-size:12px}
+.chip b{color:var(--accent)}
+.viewer img,.viewer canvas{width:100%;display:block;border-radius:8px;background:#000;max-height:560px;object-fit:contain}
+.ctrl{display:flex;gap:8px;align-items:center;margin-top:10px}
+.ctrl input[type=range]{flex:1;accent-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line)}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--panel2)}
+.idpill{display:inline-block;min-width:34px;text-align:center;padding:1px 8px;border-radius:5px;font-weight:700;color:#06121f}
+.bar{height:6px;background:var(--bg);border-radius:3px;min-width:60px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+.muted{color:var(--muted)}
+.err{background:#3a1a1f;border:1px solid var(--err);color:#ffc9c9;padding:10px 14px;border-radius:8px}
+.loading{display:flex;gap:10px;align-items:center;color:var(--muted);padding:10px 0}
+.spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.plate-card{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--panel2);border-radius:8px;padding:14px;margin-top:10px}
+.plate{background:#f5f1d6;color:#111;border:3px solid #111;border-radius:8px;padding:6px 18px;font:700 28px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.12em;box-shadow:inset 0 0 0 2px #f5f1d6,inset 0 0 0 3px #111}
+.plate.none{background:var(--bg);color:var(--muted);border-style:dashed;box-shadow:none;font-size:16px}
+.plate-card img{height:56px;border-radius:4px;border:1px solid var(--line)}
+.meta{display:grid;gap:4px;min-width:200px;flex:1}
+.hidden{display:none}
+details{margin-top:10px}summary{cursor:pointer;color:var(--muted)}
+pre{background:var(--bg);padding:10px;border-radius:6px;overflow:auto;max-height:260px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚗 ANPR Console <span id="health" class="badge">checking…</span></h1>
+  <div class="cfg">
+    <label style="margin:0">Backend URL</label>
+    <input type="text" id="base" style="width:240px">
+    <button class="ghost sm" id="ping">Test</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" data-tab="vehicle">Vehicle detection</button>
+    <button class="tab" data-tab="plate">Plate reader</button>
+  </div>
+
+  <!-- ============ VEHICLE TAB ============ -->
+  <section id="tab-vehicle">
+    <div class="panel">
+      <h3>Input</h3>
+      <div class="drop" id="vDrop"><div id="vDropText">Drop an <b>image</b> or <b>video</b> here, or click to browse</div></div>
+      <input type="file" id="vFile" accept="image/*,video/*" class="hidden">
+      <div class="grid g5" style="margin-top:14px">
+        <div><label>Confidence</label><input type="number" id="vConf" value="0.25" step="0.05" min="0" max="1"></div>
+        <div><label>IoU</label><input type="number" id="vIou" value="0.5" step="0.05" min="0" max="1"></div>
+        <div><label>Frame stride (video)</label><input type="number" id="vStride" value="5" min="1"></div>
+        <div><label>Max frames (video)</label><input type="number" id="vMax" placeholder="all" min="1"></div>
+        <div><label>Return frame images</label><select id="vImgs" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px"><option value="true">Yes</option><option value="false">No</option></select></div>
+      </div>
+      <div style="margin-top:14px"><button id="vRun" disabled>Run detection</button></div>
+    </div>
+    <div id="vOut"></div>
+  </section>
+
+  <!-- ============ PLATE TAB ============ -->
+  <section id="tab-plate" class="hidden">
+    <div class="panel">
+      <h3>Input</h3>
+      <div class="drop" id="pDrop"><div id="pDropText">Drop a <b>vehicle image / frame</b> here, or click to browse</div></div>
+      <input type="file" id="pFile" accept="image/*" class="hidden">
+      <h3 style="margin-top:16px">Vehicle bbox <span class="muted" style="text-transform:none;letter-spacing:0">(leave empty to scan the whole image)</span></h3>
+      <div class="grid g5">
+        <div><label>x1</label><input type="number" id="px1"></div>
+        <div><label>y1</label><input type="number" id="py1"></div>
+        <div><label>x2</label><input type="number" id="px2"></div>
+        <div><label>y2</label><input type="number" id="py2"></div>
+        <div><label>Plate confidence</label><input type="number" id="pConf" value="0.25" step="0.05" min="0" max="1"></div>
+      </div>
+      <div style="margin-top:14px"><button id="pRun" disabled>Read plate</button></div>
+    </div>
+    <div id="pOut"></div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const base=()=>$('#base').value.replace(/\/+$/,'');
+const hue=id=>id==null?'#8b98a9':`hsl(${(id*47)%360} 75% 62%)`;
+const bar=v=>`<div class="bar"><i style="width:${Math.round(v*100)}%"></i></div>`;
+const loading=(el,msg)=>el.innerHTML=`<div class="loading"><div class="spin"></div>${msg}</div>`;
+const showErr=(el,e)=>el.innerHTML=`<div class="err"><b>Error:</b> ${esc(e.message||e)}</div>`;
+
+$('#base').value=location.protocol.startsWith('http')?location.origin:'http://localhost:5000';
+try{const s=localStorage.getItem('anpr_base');if(s&&!location.protocol.startsWith('http'))$('#base').value=s}catch{}
+
+async function post(path,fd){
+  const r=await fetch(base()+path,{method:'POST',body:fd});
+  const j=await r.json().catch(()=>({error:'Invalid server response ('+r.status+')'}));
+  if(!r.ok)throw new Error(j.error||r.statusText);
+  return j;
+}
+async function health(){
+  const b=$('#health');
+  try{
+    const j=await (await fetch(base()+'/health')).json();
+    b.className='badge ok';b.textContent=`online · ${j.device}${j.gpu_name?' ('+j.gpu_name+')':''}`;
+    try{localStorage.setItem('anpr_base',base())}catch{}
+  }catch{b.className='badge err';b.textContent='offline'}
+}
+$('#ping').onclick=health;health();
+
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));
+  ['vehicle','plate'].forEach(n=>$('#tab-'+n).classList.toggle('hidden',n!==t.dataset.tab));
+});
+
+// dropzone helper
+function dropzone(zone,input,cb){
+  zone.onclick=()=>input.click();
+  input.onchange=()=>input.files[0]&&cb(input.files[0]);
+  ['dragover','dragenter'].forEach(e=>zone.addEventListener(e,ev=>{ev.preventDefault();zone.classList.add('over')}));
+  ['dragleave','drop'].forEach(e=>zone.addEventListener(e,ev=>{ev.preventDefault();zone.classList.remove('over')}));
+  zone.addEventListener('drop',ev=>ev.dataTransfer.files[0]&&cb(ev.dataTransfer.files[0]));
+}
+
+/* ======================= PLATE RESULT RENDER ======================= */
+function plateHTML(resp){
+  return resp.results.map((r,i)=>{
+    const vb=r.vehicle_bbox;
+    const plates=r.plates.length?r.plates.map(p=>`
+      <div class="plate-card">
+        <div class="plate${p.plate_text?'':' none'}">${esc(p.plate_text||'unreadable')}</div>
+        ${p.plate_image_base64?`<img src="data:image/jpeg;base64,${p.plate_image_base64}" alt="plate crop">`:''}
+        <div class="meta">
+          <div class="muted">OCR confidence</div>${bar(p.ocr_confidence)}<span class="mono">${(p.ocr_confidence*100).toFixed(1)}%</span>
+          <div class="muted">Plate detection confidence</div>${bar(p.detection_confidence)}<span class="mono">${(p.detection_confidence*100).toFixed(1)}%</span>
+        </div>
+      </div>`).join(''):`<div class="plate-card"><div class="plate none">no plate found</div></div>`;
+    return `<div class="panel"><h3>Vehicle ${i+1} <span class="mono">[${vb.x1}, ${vb.y1}, ${vb.x2}, ${vb.y2}]</span></h3>${plates}</div>`;
+  }).join('')+`<details><summary>Raw JSON</summary><pre>${esc(JSON.stringify(resp,null,2))}</pre></details>`;
+}
+
+/* ======================= VEHICLE TAB ======================= */
+const V={file:null,data:null,idx:0,timer:null,isVideo:false,url:null,vid:null};
+
+dropzone($('#vDrop'),$('#vFile'),f=>{
+  V.file=f;V.isVideo=f.type.startsWith('video/');V.vid=null;
+  if(V.url)URL.revokeObjectURL(V.url);V.url=URL.createObjectURL(f);
+  $('#vDropText').innerHTML=`<b>${esc(f.name)}</b> · ${(f.size/1048576).toFixed(2)} MB · ${V.isVideo?'video':'image'}`;
+  $('#vRun').disabled=false;
+});
+
+$('#vRun').onclick=async()=>{
+  const out=$('#vOut');clearInterval(V.timer);
+  const fd=new FormData();
+  fd.append('file',V.file);fd.append('conf',$('#vConf').value);fd.append('iou',$('#vIou').value);
+  fd.append('frame_stride',$('#vStride').value||1);fd.append('include_images',$('#vImgs').value);
+  if($('#vMax').value)fd.append('max_frames',$('#vMax').value);
+  $('#vRun').disabled=true;const t0=performance.now();
+  loading(out,'Running detection… videos can take a while');
+  const tick=setInterval(()=>loading(out,`Running detection… ${((performance.now()-t0)/1000).toFixed(0)}s`),1000);
+  try{V.data=await post('/vehicle/detect',fd);V.idx=0;clearInterval(tick);renderVehicle((performance.now()-t0)/1000)}
+  catch(e){clearInterval(tick);showErr(out,e)}
+  $('#vRun').disabled=false;
+};
+
+function trackSummary(frames){
+  const m={};
+  frames.forEach((f,i)=>f.detections.forEach(d=>{
+    if(d.track_id==null)return;
+    const t=m[d.track_id]??={id:d.track_id,cls:d.class_name,n:0,first:i,last:i,max:0};
+    t.n++;t.last=i;t.max=Math.max(t.max,d.confidence);
+  }));
+  return Object.values(m).sort((a,b)=>a.id-b.id);
+}
+
+function renderVehicle(secs){
+  const d=V.data,out=$('#vOut');
+  const totalDet=d.frames.reduce((s,f)=>s+f.detections.length,0);
+  const tracks=trackSummary(d.frames);
+  const stat=(k,v)=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  const chips=d.unique_vehicles_by_class?Object.entries(d.unique_vehicles_by_class).map(([k,v])=>`<span class="chip">${esc(k)} <b>${v}</b></span>`).join(''):'';
+  out.innerHTML=`
+  <div class="panel"><h3>Summary</h3>
+    <div class="grid g5">
+      ${stat('Type',d.type)}${stat('Device',d.device)}${stat('Frames',d.total_frames)}
+      ${stat('Detections',totalDet)}${stat(d.type==='video'?'Unique vehicles':'Time',d.type==='video'?d.unique_vehicles:secs.toFixed(1)+'s')}
+    </div>
+    ${chips?`<div class="chips">${chips}</div>`:''}
+    <div class="muted" style="margin-top:10px">Processed in ${secs.toFixed(1)}s${d.fps?` · source ${d.fps.toFixed(1)} fps · stride ${d.frame_stride}`:''}</div>
+  </div>
+  <div class="grid g2" style="grid-template-columns:3fr 2fr;align-items:start">
+    <div class="panel viewer"><h3>Frame viewer</h3>
+      <div id="fImgBox"></div>
+      <div class="ctrl" ${d.frames.length<2?'style="display:none"':''}>
+        <button class="ghost sm" id="fPrev">◀</button><button class="sm" id="fPlay">▶ Play</button><button class="ghost sm" id="fNext">▶</button>
+        <input type="range" id="fSlide" min="0" max="${d.frames.length-1}" value="0">
+      </div>
+      <div class="mono" id="fLabel" style="margin-top:8px"></div>
+    </div>
+    <div class="panel"><h3>Detections in this frame</h3><div id="fTable"></div></div>
+  </div>
+  ${d.type==='video'?`<div class="panel"><h3>Tracked vehicles <span class="muted" style="text-transform:none">(click a row to jump to first appearance)</span></h3>
+    <table><tr><th>ID</th><th>Class</th><th>Frames seen</th><th>First → last frame</th><th>Best conf</th></tr>
+    ${tracks.map(t=>`<tr class="click" data-i="${t.first}"><td><span class="idpill" style="background:${hue(t.id)}">#${t.id}</span></td><td>${esc(t.cls)}</td><td>${t.n}</td>
+      <td class="mono">${d.frames[t.first].frame_index} → ${d.frames[t.last].frame_index}</td><td>${bar(t.max)}<span class="mono">${(t.max*100).toFixed(0)}%</span></td></tr>`).join('')||'<tr><td colspan=5 class="muted">No tracked vehicles</td></tr>'}
+    </table></div>`:''}
+  <div id="vPlate"></div>
+  <details><summary>Raw JSON (images stripped)</summary><pre>${esc(JSON.stringify(d,(k,v)=>k==='image_base64'?'<base64>':v,2))}</pre></details>`;
+
+  $('#fPrev').onclick=()=>showFrame(V.idx-1);$('#fNext').onclick=()=>showFrame(V.idx+1);
+  $('#fSlide').oninput=e=>showFrame(+e.target.value);
+  $('#fPlay').onclick=togglePlay;
+  out.querySelectorAll('tr.click').forEach(r=>r.onclick=()=>{showFrame(+r.dataset.i);out.scrollIntoView({behavior:'smooth'})});
+  showFrame(0);
+}
+
+function togglePlay(){
+  const b=$('#fPlay');
+  if(V.timer){clearInterval(V.timer);V.timer=null;b.textContent='▶ Play';return}
+  b.textContent='⏸ Pause';
+  V.timer=setInterval(()=>{if(V.idx>=V.data.frames.length-1)V.idx=-1;showFrame(V.idx+1)},200);
+}
+
+function showFrame(i){
+  const fr=V.data.frames;V.idx=Math.max(0,Math.min(fr.length-1,i));
+  const f=fr[V.idx];
+  $('#fImgBox').innerHTML=f.image_base64?`<img src="data:image/jpeg;base64,${f.image_base64}" alt="frame">`:`<div class="muted" style="padding:40px;text-align:center">Frame images were disabled for this run</div>`;
+  $('#fSlide').value=V.idx;
+  $('#fLabel').textContent=`frame ${f.frame_index}${f.timestamp_sec!=null?` · t=${f.timestamp_sec}s`:''} · ${f.width}×${f.height} · ${V.idx+1}/${fr.length}`;
+  $('#fTable').innerHTML=f.detections.length?`<table><tr><th>ID</th><th>Class</th><th>Conf</th><th></th></tr>
+    ${f.detections.map((d,k)=>`<tr><td><span class="idpill" style="background:${hue(d.track_id)}">${d.track_id==null?'–':'#'+d.track_id}</span></td>
+    <td>${esc(d.class_name)}<div class="mono">[${Math.round(d.bbox.x1)}, ${Math.round(d.bbox.y1)}, ${Math.round(d.bbox.x2)}, ${Math.round(d.bbox.y2)}]</div></td>
+    <td>${bar(d.confidence)}<span class="mono">${(d.confidence*100).toFixed(0)}%</span></td>
+    <td><button class="ghost sm" data-k="${k}">Read plate</button></td></tr>`).join('')}</table>`:`<div class="muted">No vehicles in this frame</div>`;
+  $('#fTable').querySelectorAll('button').forEach(b=>b.onclick=()=>readPlateFor(f,f.detections[+b.dataset.k],b));
+}
+
+async function origFrame(fr){
+  if(!V.isVideo)return V.file;
+  if(!V.vid){
+    V.vid=document.createElement('video');V.vid.muted=true;V.vid.preload='auto';V.vid.src=V.url;
+    await new Promise(r=>V.vid.onloadeddata=r);
+  }
+  const v=V.vid;
+  const seeked=new Promise(r=>v.addEventListener('seeked',r,{once:true}));
+  v.currentTime=Math.min((fr.timestamp_sec||0)+0.001,v.duration);await seeked;
+  const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  return new Promise(r=>c.toBlob(r,'image/jpeg',.95));
+}
+
+async function readPlateFor(fr,det,btn){
+  const out=$('#vPlate');btn.disabled=true;loading(out,`Reading plate for ${esc(det.class_name)}${det.track_id!=null?' #'+det.track_id:''}…`);
+  try{
+    const blob=await origFrame(fr);
+    const fd=new FormData();fd.append('image',blob,'frame.jpg');
+    const b=det.bbox;fd.append('bbox',JSON.stringify([b.x1,b.y1,b.x2,b.y2]));fd.append('include_images','true');
+    const resp=await post('/plate/detect',fd);
+    out.innerHTML=`<h3 style="color:var(--muted);font-size:13px;text-transform:uppercase">Plate result · ${esc(det.class_name)}${det.track_id!=null?' #'+det.track_id:''} · frame ${fr.frame_index}</h3>`+plateHTML(resp);
+    out.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(e){showErr(out,e)}
+  btn.disabled=false;
+}
+
+/* ======================= PLATE TAB ======================= */
+let P={file:null,img:null};
+dropzone($('#pDrop'),$('#pFile'),f=>{
+  P.file=f;
+  $('#pDropText').innerHTML=`<b>${esc(f.name)}</b> · ${(f.size/1048576).toFixed(2)} MB`;
+  const img=new Image();img.onload=()=>{P.img=img;
+    $('#pOut').innerHTML=`<div class="panel viewer"><h3>Preview · ${img.naturalWidth}×${img.naturalHeight}</h3><canvas id="pCanvas"></canvas></div>`;drawPlate([])};
+  img.src=URL.createObjectURL(f);$('#pRun').disabled=false;
+});
+
+function drawPlate(results){
+  const c=$('#pCanvas');if(!c)return;const img=P.img;
+  c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const g=c.getContext('2d');g.drawImage(img,0,0);
+  const lw=Math.max(2,img.naturalWidth/400),fs=Math.max(14,img.naturalWidth/45);
+  g.lineWidth=lw;g.font=`bold ${fs}px sans-serif`;
+  results.forEach(r=>{
+    const v=r.vehicle_bbox;g.strokeStyle='#4f9dff';g.strokeRect(v.x1,v.y1,v.x2-v.x1,v.y2-v.y1);
+    r.plates.forEach(p=>{
+      const b=p.plate_bbox;g.strokeStyle='#38d39f';g.strokeRect(b.x1,b.y1,b.x2-b.x1,b.y2-b.y1);
+      const t=p.plate_text||'?',w=g.measureText(t).width+10;
+      g.fillStyle='#38d39f';g.fillRect(b.x1,Math.max(0,b.y1-fs-6),w,fs+6);
+      g.fillStyle='#04101f';g.fillText(t,b.x1+5,Math.max(fs,b.y1-6));
+    });
+  });
+}
+
+$('#pRun').onclick=async()=>{
+  const out=$('#pOut');
+  const fd=new FormData();fd.append('image',P.file);fd.append('conf',$('#pConf').value);fd.append('include_images','true');
+  const bb=['px1','py1','px2','py2'].map(i=>$('#'+i).value);
+  if(bb.every(v=>v!==''))fd.append('bbox',JSON.stringify(bb.map(Number)));
+  else if(bb.some(v=>v!==''))return showErr(out,'Fill all four bbox values or leave all empty');
+  $('#pRun').disabled=true;
+  const prev=out.innerHTML;loading(out,'Reading plate…');
+  try{
+    const resp=await post('/plate/detect',fd);
+    out.innerHTML=`<div class="panel viewer"><h3>Annotated image</h3><canvas id="pCanvas"></canvas>
+      <div class="muted" style="margin-top:8px"><span style="color:#4f9dff">■</span> vehicle bbox &nbsp; <span style="color:#38d39f">■</span> plate bbox</div></div>`+plateHTML(resp);
+    drawPlate(resp.results);
+  }catch(e){showErr(out,e)}
+  $('#pRun').disabled=false;
+};
+</script>
+</body>
+</html>

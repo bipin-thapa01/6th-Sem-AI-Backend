@@ -1,0 +1,16 @@
+flask>=3.0
+ultralytics>=8.3
+easyocr>=1.7.1
+opencv-python-headless>=4.8
+numpy>=1.24
+torch>=2.1
+torchvision>=0.16
+lapx>=0.5.5        # required by ByteTrack / BoT-SORT trackers
+
+# Optional, for production serving:
+# gunicorn>=22.0
+
+# NOTE (GPU): the default `pip install torch` may give a CPU-only build on Windows.
+# For NVIDIA GPUs install the CUDA build first, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# The app auto-detects CUDA via torch.cuda.is_available() and falls back to CPU.
